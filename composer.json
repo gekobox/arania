@@ -1,4 +1,8 @@
 {
 	"name":"arania/arania",
+	"description":"Tiny Framewaork For Web Content Extraction",
+	"require":{
+		"php": ">= 5.3.*"
+	}
 	
 }
