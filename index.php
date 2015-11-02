@@ -1,6 +1,5 @@
 <?php
-require 'Crawler.php';
-require 'Scraper.php';
+require __DIR__ . '/vendor/autoload.php';
 
 use arania\Crawler;
 use arania\Scraper;
@@ -20,7 +19,5 @@ $fileContent= $scraper->extractData($fields);
 //echo $fileContent;
 $fileHandler= fopen("fileContent.csv","w");
 if(!$fileHandler)
-	die("error al abrir");
 if(fwrite($fileHandler, $fileContent) === false)	
-	die("error al escribir: ");
 fclose($fileHandler);
