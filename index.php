@@ -1,5 +1,6 @@
 <?php
-require __DIR__ . '/vendor/autoload.php';
+require "Crawler.php";
+require "Scraper.php";
 
 use arania\Crawler;
 use arania\Scraper;
@@ -10,14 +11,13 @@ use arania\Scraper;
 $crawler= new Crawler("http://www.ebay.com/rpp/electronics-es/GEO-EG-Latest-Tech-ES");
 $scraper= new Scraper($crawler);
 $fields= array("campo"=>"rttl",
-				"nose"=>"gl-cpr2",
-				"enlace"=>"rttl:link"
+				"nose"=>"gl-cpr2",				
 		
 );
 //echo $scraper->extractData($fields);
 $fileContent= $scraper->extractData($fields);
 
-//echo $fileContent;
+echo $fileContent;
 $fileHandler= fopen("fileContent.csv","w");
 if(!$fileHandler)
 if(fwrite($fileHandler, $fileContent) === false)	
