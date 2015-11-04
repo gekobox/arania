@@ -1,7 +1,5 @@
-# arania
-Tiny PHP Framework For Web Content Extraction
-Write web crawling applications with simple sintax
-Export extracted data in diferent formats
+#arania
+Write web crawling applications with simple sintax and export extracted data in diferent formats
  - CSV
  - JSON
  - XML
@@ -18,40 +16,49 @@ Create a composer project inside your /webroot dir (for web application) or anyw
 
 ## Add to existing composer project
 
-> {
-     "require": {
-         "arania/arania": "1.*"
-     }
- }
+```json
+{
+    "require": {
+        "arania/arania": "1.*"
+    }
+}
+``` 
+# Usage
  
- #Usage
+arania is based on two components: the Crawler wich obtains the data and the Scraper wich extracts the content
  
- arania is based on two components: the Crawler wich obtains the data and the Scraper wich extracts the content
+## Basic extraction
+Import the namespace classes
  
- ##Basic extraction
- Import the namespace classes
- 
- ```
+```php
 use arania\Crawler;
 use arania\Scraper;
- ```
- Create a Crawler object with the target URL
- ```
+```
+
+Create a Crawler object with the target URL
+```php
  $crawler= new Crawler("the/target/url");
- ```
+```
  
- Create a Scraper object and pass the Crawler instance to it
+Create a Scraper object and pass the Crawler instance to it
  
- ```
- $scraper= new Scraper($crawler);
- ```
+```php
+$scraper= new Scraper($crawler);
+```
  
- Define the fields to extract in a key/value array with the format:
- >array("custom field name"=>"tag class name")
- Example
- ```$fields= array("Description"=>"desc");```
+Define the fields to extract in a key/value array with the format:
+```
+array("custom field name"=>"tag class name")
+```
+
+Example
+ ```php
+ $fields= array("Description"=>"desc");
+ ```
  
  Finally call extractData() method from Scraper instance and pass the fields to extract array and the return format
  > extractData(array(),"csv|json|xml")
- ``` $extractedContent= $scraper->extractData($fields) // by default it returns csv format
  
+```php
+$extractedContent= $scraper->extractData($fields) // by default it returns csv format
+ ```
