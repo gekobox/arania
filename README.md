@@ -52,13 +52,25 @@ array("custom field name"=>"tag class name")
 ```
 
 Example
- ```php
- $fields= array("Description"=>"desc");
- ```
+```php
+$fields= array("Description"=>"desc");
+```
  
- Finally call extractData() method from Scraper instance and pass the fields to extract array and the return format
- > extractData(array(),"csv|json|xml")
+Finally call extractData() method from Scraper instance and pass the fields to extract array and the return format
+> extractData(array(),"csv|json|xml")
  
 ```php
 $extractedContent= $scraper->extractData($fields) // by default it returns csv format
  ```
+
+###Full code
+```php
+use arania\Crawler;
+use arania\Scraper;
+
+$crawler= new Crawler("the/target/url");
+$scraper= new Scraper($crawler);
+$fields= array("Description"=>"desc");
+$extractedContent= $scraper->extractData($fields) // by default it returns csv format
+
+```
