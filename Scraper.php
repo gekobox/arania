@@ -2,13 +2,14 @@
 namespace arania;
 
 use arania\Crawler;
+use arania\Exporter;
 use DOMDocument;
 use DOMXPath;
+use Exception;
 
 class Scraper{
 	
-	private $document="";
-	private $keyField=""; // use to count the number of rows
+	private $document="";	
 	private $nextControl="";
 	private $nextControlAttrib="";
 	private $totalPages=1;
@@ -31,11 +32,12 @@ class Scraper{
 		
 		//$this->document->loadHTML($crawler->run());
 		//$this->document->loadHTML(mb_convert_encoding($result,"HTML-ENTITIES", "UTF-8"));
-		$this->loadDomDocument();
+		//$this->loadDomDocument();
 		
 		//$this->document->save("contenido.txt");
 		//$this->document->saveHTMLFile("contenido.txt");
 	}
+	
 	function loadDomDocument($url=""){
 		if($url !== "")
 			$this->mCrawler->setUrl($url);
@@ -57,6 +59,7 @@ class Scraper{
 	 * 			"field name"=>"class",
 	 * 		]
 	 * @param array $fieldsToExtract
+	 * @param string $format csv|json|xml
 	 */
 	function extractData($fieldsToExtract, $format="csv"){
 		
@@ -74,6 +77,8 @@ class Scraper{
 		do{
 			
 			$data= array();
+			$this->loadDomDocument();
+				
 			$nextControlFinder= new DOMXPath($this->document);
 			$nextControlNode=false;
 			switch ($this->nextControlAttrib){
@@ -88,8 +93,6 @@ class Scraper{
 			
 			
 			foreach($fieldsToExtract as $field=>$class){
-				if($this->keyField ==="")
-					$this->keyField= $field;
 				
 				$fieldFinder= new DOMXPath($this->document);
 				$classAttribute= explode(":", $class);
@@ -98,14 +101,14 @@ class Scraper{
 				if (count($classAttribute) > 1){
 					switch ($classAttribute[1]){
 						case "link":
-							$queryString= '//*[contains(concat(" ",normalize-space(@class), " "), " ' . $classAttribute[0] . ' ")]/a/@href';
+							$queryString.= $this->buildNestedClassQuery($classAttribute[0]).'/a/@href';
 							break;
 						
 					}
 					
 				}
 				else{
-					$queryString= '//*[contains(concat(" ",normalize-space(@class), " "), " ' . $class . ' ")]';
+					$queryString= $this->buildNestedClassQuery($class);
 				}
 					
 				
@@ -118,7 +121,7 @@ class Scraper{
 			
 			$this->currentPage++;
 			if($nextControlNode){
-				$this->loadDomDocument($nextControlNode->item(0)->nodeValue);
+				//$this->loadDomDocument($nextControlNode->item(0)->nodeValue);
 				echo "nextControlNode ".$nextControlNode->item(0)->nodeValue."<br>";
 			}			
 			$dataPages[]= $data;
@@ -133,7 +136,7 @@ class Scraper{
 		switch($format){
 			case 'csv':
 				echo "data length: ".count($dataPages);
-				$formattedData= $this->getCsvFormat($dataPages);
+				$formattedData= Exporter::exportCSV($dataPages);
 				break;
 			case 'json':
 					
@@ -144,28 +147,14 @@ class Scraper{
 		
 	}
 
-	function getCsvFormat($dataPages){
-		$dataString="";
-		foreach ($dataPages as $data){
-			$rowsCount= $data[$this->keyField]->length;
-			
-			foreach ($data as $field=>$class){
-				$dataString.= $field.";";
-			}
-			$dataString.= "\n";
-			
-			for($i=0; $i < $rowsCount; $i++){
-				foreach ($data as $field){
-					if($field->item($i) !== null){
-						$dataString.= html_entity_decode(trim($field->item($i)->nodeValue));
-						//echo html_entity_decode($field->item($i)->nodeValue)."<br>";
-					}
-					$dataString .= ";";
-				}
-				//echo $dataString."<br>";
-				$dataString.= "\n";
-			}			
+	function buildNestedClassQuery($class){
+		$classTree= explode(">", $class);
+		$queryString="";
+		foreach ($classTree as $nodeClass){
+			$queryString.= '//*[contains(concat(" ",normalize-space(@class), " "), " ' . $nodeClass . ' ")]';
 		}
-		return "\xEF\xBB\xBF".$dataString;	//utf-8 with BOM
-	}	
+		
+		return $queryString;		
+	}
+		
 }
