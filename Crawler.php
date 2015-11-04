@@ -16,6 +16,10 @@ class Crawler{
 		$this->mUrl= $url;		
 	}
 	
+	function setUrl($url){
+		$this->mUrl= $url;
+	}
+	
 	function acceptCookie($accept=false, $cookiePath=""){
 		$this->acceptCookie=$accept;
 		$this->cookieFile=time();
@@ -49,6 +53,7 @@ class Crawler{
 		$curl= curl_init();
 		curl_setopt($curl, CURLOPT_URL, $this->mUrl);
 		curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($curl, CURLOPT_ENCODING, "");
 		
 		if($this->userAgent !== "")	
 			curl_setopt($curl, CURLOPT_USERAGENT, $this->userAgent);
@@ -60,9 +65,11 @@ class Crawler{
 		$result= curl_exec($curl);
 		if($result === false)
 			$result= curl_error($curl);
+		
 		curl_close($curl);
 		
-		//echo $result;
+		//echo $result;		
+		
 		return $result;			
 	}	
 	

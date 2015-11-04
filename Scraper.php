@@ -9,14 +9,46 @@ class Scraper{
 	
 	private $document="";
 	private $keyField=""; // use to count the number of rows
+	private $nextControl="";
+	private $nextControlAttrib="";
+	private $totalPages=1;
+	private $currentPage=1;
+	private $mCrawler;
 	
 	function __construct($crawler){
 
 		$this->document= new DOMDocument();
-		$this->document->validateOnParse=true;
 		$this->document->preserveWhiteSpace=false;
 		libxml_use_internal_errors(true);
-		$this->document->loadHTML($crawler->run());
+		$this->mCrawler= $crawler;
+		
+		/*$fileHandler= fopen("resultado.txt","w");
+		if(!$fileHandler)
+			die("error al abrir");
+		if(fwrite($fileHandler, $result) === false)
+			die("error al escribir: ");
+		fclose($fileHandler);*/
+		
+		//$this->document->loadHTML($crawler->run());
+		//$this->document->loadHTML(mb_convert_encoding($result,"HTML-ENTITIES", "UTF-8"));
+		$this->loadDomDocument();
+		
+		//$this->document->save("contenido.txt");
+		//$this->document->saveHTMLFile("contenido.txt");
+	}
+	function loadDomDocument($url=""){
+		if($url !== "")
+			$this->mCrawler->setUrl($url);
+		
+		$result= $this->mCrawler->run();
+		$this->document->loadHTML('<?xml version="1.0" encoding="utf-8"?>'.$result);
+	}
+	
+	function paginationControl($nextPageTag, $pagesToExtract=1){
+		$pagination= explode(":", $nextPageTag);
+		$this->nextControlAttrib= $pagination[0];
+		$this->nextControl= $pagination[1];
+		$this->totalPages= $pagesToExtract;
 	}
 	
 	/**
@@ -27,44 +59,84 @@ class Scraper{
 	 * @param array $fieldsToExtract
 	 */
 	function extractData($fieldsToExtract, $format="csv"){
-		$data= array();
-		foreach($fieldsToExtract as $field=>$class){
-			if($this->keyField ==="")
-				$this->keyField= $field;
+		
+		if($this->nextControl ===""){
+			$this->totalPages=1;
+		}
+		
+		if($this->totalPages < 0){
+			throw new Exception("totalPages must be greater than 0");
+			return; 
+		}
+		
+		$dataPages= array();
+		
+		do{
 			
-			$fieldFinder= new DOMXPath($this->document);
-			$classAttribute= explode(":", $class);
-			$queryString="";
+			$data= array();
+			$nextControlFinder= new DOMXPath($this->document);
+			$nextControlNode=false;
+			switch ($this->nextControlAttrib){
+				case "id":
+					
+					break;
+				case "class":
+					$nextControlNode=$nextControlFinder->query('//*[contains(concat(" ",normalize-space(@class), " "), " ' . $this->nextControl . ' ")]/a/@href');
+					break;
+			}
 			
-			if (count($classAttribute) > 1){
-				switch ($classAttribute[1]){
-					case "link":
-						$queryString= '//*[contains(concat(" ",normalize-space(@class), " "), " ' . $classAttribute[0] . ' ")]/a/@href';
-						break;
+			
+			
+			foreach($fieldsToExtract as $field=>$class){
+				if($this->keyField ==="")
+					$this->keyField= $field;
+				
+				$fieldFinder= new DOMXPath($this->document);
+				$classAttribute= explode(":", $class);
+				$queryString="";
+				
+				if (count($classAttribute) > 1){
+					switch ($classAttribute[1]){
+						case "link":
+							$queryString= '//*[contains(concat(" ",normalize-space(@class), " "), " ' . $classAttribute[0] . ' ")]/a/@href';
+							break;
+						
+					}
 					
 				}
+				else{
+					$queryString= '//*[contains(concat(" ",normalize-space(@class), " "), " ' . $class . ' ")]';
+				}
+					
 				
+				$foundData= $fieldFinder->query($queryString);
+				//echo $field.":=".$queryString."<br>";
+				//echo $foundData->length;
+				$data[$field]= $foundData;
 			}
-			else{
-				$queryString= '//*[contains(concat(" ",normalize-space(@class), " "), " ' . $class . ' ")]';
-			}
-				
+			//echo html_entity_decode($data["campo"]->item(0)->nodeValue);
 			
-			$foundData= $fieldFinder->query($queryString);
-			//echo $field.":=".$queryString."<br>";
-			//echo $foundData->length;
-			$data[$field]= $foundData;
-		}
-		//echo $data["respuesta"]->item(0)->nodeValue;
+			$this->currentPage++;
+			if($nextControlNode){
+				$this->loadDomDocument($nextControlNode->item(0)->nodeValue);
+				echo "nextControlNode ".$nextControlNode->item(0)->nodeValue."<br>";
+			}			
+			$dataPages[]= $data;
+			
+		}while(( $this->totalPages ==0 ||$this->currentPage <= $this->totalPages) 
+				&& $nextControlNode !== false);
+		
+		echo "pages extracted: ".($this->currentPage - 1);
 		
 		$formattedData="";
 		
 		switch($format){
 			case 'csv':
-				$formattedData= $this->getCsvFormat($data);
+				echo "data length: ".count($dataPages);
+				$formattedData= $this->getCsvFormat($dataPages);
 				break;
 			case 'json':
-				
+					
 				break;
 		}
 		
@@ -72,25 +144,28 @@ class Scraper{
 		
 	}
 
-	function getCsvFormat($data){
+	function getCsvFormat($dataPages){
 		$dataString="";
-		$rowsCount= $data[$this->keyField]->length;
-		
-		foreach ($data as $field=>$class){
-			$dataString.= $field.";";
-		}
-		$dataString.= "\n";
-		
-		for($i=0; $i < $rowsCount; $i++){
-			foreach ($data as $field){
-				if($field->item($i) !== null)
-					$dataString.= trim($field->item($i)->nodeValue);
-				$dataString .= ";";
+		foreach ($dataPages as $data){
+			$rowsCount= $data[$this->keyField]->length;
+			
+			foreach ($data as $field=>$class){
+				$dataString.= $field.";";
 			}
-			//echo $dataString."<br>";
 			$dataString.= "\n";
+			
+			for($i=0; $i < $rowsCount; $i++){
+				foreach ($data as $field){
+					if($field->item($i) !== null){
+						$dataString.= html_entity_decode(trim($field->item($i)->nodeValue));
+						//echo html_entity_decode($field->item($i)->nodeValue)."<br>";
+					}
+					$dataString .= ";";
+				}
+				//echo $dataString."<br>";
+				$dataString.= "\n";
+			}			
 		}
-		
-		return $dataString;
+		return "\xEF\xBB\xBF".$dataString;	//utf-8 with BOM
 	}	
 }
