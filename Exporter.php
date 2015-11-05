@@ -2,6 +2,11 @@
 namespace arania;
 
 class Exporter{
+	
+	/**
+	 * Export the extracted data to CSV format
+	 * @param array $dataPages Extracted data
+	 */
 	static function exportCSV($dataPages){
 		$dataString="";
 		foreach ($dataPages as $data){

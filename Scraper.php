@@ -21,23 +21,13 @@ class Scraper{
 		$this->document= new DOMDocument();
 		$this->document->preserveWhiteSpace=false;
 		libxml_use_internal_errors(true);
-		$this->mCrawler= $crawler;
-		
-		/*$fileHandler= fopen("resultado.txt","w");
-		if(!$fileHandler)
-			die("error al abrir");
-		if(fwrite($fileHandler, $result) === false)
-			die("error al escribir: ");
-		fclose($fileHandler);*/
-		
-		//$this->document->loadHTML($crawler->run());
-		//$this->document->loadHTML(mb_convert_encoding($result,"HTML-ENTITIES", "UTF-8"));
-		//$this->loadDomDocument();
-		
-		//$this->document->save("contenido.txt");
-		//$this->document->saveHTMLFile("contenido.txt");
+		$this->mCrawler= $crawler;		
 	}
 	
+	/**
+	 * Load the DOMDocument with the specified url
+	 * @param string $url Url to load
+	 */
 	function loadDomDocument($url=""){
 		if($url !== "")
 			$this->mCrawler->setUrl($url);
@@ -46,6 +36,11 @@ class Scraper{
 		$this->document->loadHTML('<?xml version="1.0" encoding="utf-8"?>'.$result);
 	}
 	
+	/**
+	 * Enable navigation through pages using "Next Page" option in a website 
+	 * @param unknown $nextPageTag Tag attribute to match in the format ([class|id]=><attribute name>)
+	 * @param number $pagesToExtract Number of pages to extract or 0 to extract to the las page
+	 */
 	function paginationControl($nextPageTag, $pagesToExtract=1){
 		$pagination= explode(":", $nextPageTag);
 		$this->nextControlAttrib= $pagination[0];
@@ -56,10 +51,10 @@ class Scraper{
 	/**
 	 * fieldsToExtract format:
 	 * 		fields= [
-	 * 			"field name"=>"class",
+	 * 			"field name"=>"class[> child_class]",
 	 * 		]
-	 * @param array $fieldsToExtract
-	 * @param string $format csv|json|xml
+	 * @param array $fieldsToExtract Array containing the fields to extract
+	 * @param string $format csv|json|xml Format to extract, CSV by default
 	 */
 	function extractData($fieldsToExtract, $format="csv"){
 		
@@ -147,11 +142,16 @@ class Scraper{
 		
 	}
 
+	/**
+	 * Build a query for the DOMXPath object
+	 * @param string $class Field class to extract
+	 * @return string Query for the DOMXPath object
+	 */
 	function buildNestedClassQuery($class){
 		$classTree= explode(">", $class);
 		$queryString="";
 		foreach ($classTree as $nodeClass){
-			$queryString.= '//*[contains(concat(" ",normalize-space(@class), " "), " ' . $nodeClass . ' ")]';
+			$queryString.= '//*[contains(concat(" ",normalize-space(@class), " "), " ' . trim($nodeClass) . ' ")]';
 		}
 		
 		return $queryString;		

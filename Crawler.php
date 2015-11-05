@@ -10,6 +10,7 @@ class Crawler{
 	private $previuosInteractionData;
 	private $userAgent="";
 	private $header= array();
+	private $curlOpt;
 	
 	
 	function __construct($url){
@@ -44,6 +45,18 @@ class Crawler{
 		$this->header= $headerArray;
 	}
 	
+	/**
+	 * Set the crawler options with the corresponding CURLOPT_XXX options
+	 * @param array $curlOptions specify the key/value Array with the format: array(CURLOPT_XXX =>"value")
+	 */
+	function setOpt($curlOptions){
+		$this->curlOpt= $curlOptions;
+	}
+	
+	/**
+	 * Run the crawler
+	 * @return string String of the crawled url 
+	 */
 	function run(){
 		//run the  crawler
 		if($this->mUrl === ""){
@@ -53,7 +66,7 @@ class Crawler{
 		$curl= curl_init();
 		curl_setopt($curl, CURLOPT_URL, $this->mUrl);
 		curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-		curl_setopt($curl, CURLOPT_ENCODING, "");
+		
 		
 		if($this->userAgent !== "")	
 			curl_setopt($curl, CURLOPT_USERAGENT, $this->userAgent);
@@ -61,6 +74,10 @@ class Crawler{
 			curl_setopt($curl, CURLOPT_COOKIEFILE, $this->cookieDir."/".$this->cookieFile);
 		if(count($this->header) > 0)
 			curl_setopt($curl, CURLOPT_HTTPHEADER, $this->header);
+		
+		foreach ($this->curlOpt as $option=>$value){
+			curl_setopt($curl, $option, $value);
+		}
 		
 		$result= curl_exec($curl);
 		if($result === false)
