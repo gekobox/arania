@@ -55,6 +55,13 @@ Example
 ```php
 $fields= array("Description"=>"desc");
 ```
+Or get a class specifying its path in the class hierarchy
+
+Example
+```php
+//Get a class wich is child of another class
+$fields= array("Description"=>"parent_class>child_class");
+``
  
 Finally call extractData() method from Scraper instance and pass the fields to extract array and the return format
 > extractData(array(),"csv|json|xml")
@@ -70,7 +77,10 @@ use arania\Scraper;
 
 $crawler= new Crawler("the/target/url");
 $scraper= new Scraper($crawler);
-$fields= array("Description"=>"desc");
+$fields= array(
+   "Descripction"=>"desc",
+   "Price"=>"info>price"
+ );
 $extractedContent= $scraper->extractData($fields) // by default it returns csv format
 
 ```
