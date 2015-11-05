@@ -10,7 +10,7 @@ class Crawler{
 	private $previuosInteractionData;
 	private $userAgent="";
 	private $header= array();
-	private $curlOpt;
+	private $curlOpt= array();
 	
 	
 	function __construct($url){
